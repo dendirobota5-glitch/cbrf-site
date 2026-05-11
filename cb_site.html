@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Центральный банк Российской Федерации</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #1a1a1a; line-height: 1.5; }
+        .container { width: 90%; max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+        /* Шапка */
+        header { background: #003366; color: white; padding: 20px 0; border-bottom: 3px solid #ffcc00; }
+        .header-inner { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .logo-img { height: 70px; background: white; border-radius: 12px; padding: 5px; }
+        .logo-text h1 { font-size: 1.6rem; font-weight: 600; }
+        .logo-text p { font-size: 0.85rem; opacity: 0.9; }
+        /* Навигация */
+        nav { background: #002b4d; position: sticky; top: 0; z-index: 100; }
+        .nav-links { display: flex; flex-wrap: wrap; gap: 8px; }
+        .nav-links a { color: white; text-decoration: none; padding: 14px 20px; display: inline-block; transition: 0.2s; cursor: pointer; font-weight: 500; }
+        .nav-links a:hover { background: #004b7c; border-radius: 8px 8px 0 0; }
+        /* Основной контент */
+        main { background: white; margin: 30px auto; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 30px; min-height: 500px; }
+        /* Стили для разделов */
+        .rates-card { background: #eef5ff; padding: 20px; border-radius: 16px; margin-bottom: 30px; border-left: 6px solid #003366; }
+        .rates-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
+        .rate-item { background: white; padding: 12px 20px; border-radius: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: bold; }
+        .news-list article { border-bottom: 1px solid #e0e0e0; padding: 20px 0; }
+        .news-list article:last-child { border: none; }
+        .news-date { color: #666; font-size: 0.85rem; margin: 8px 0; }
+        .employees-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .employees-table th, .employees-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .employees-table th { background: #f2f2f2; }
+        button, .btn { background: #003366; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 4px; transition: 0.2s; }
+        button.danger { background: #b22234; }
+        button.secondary { background: #5a6268; }
+        button:hover { filter: brightness(0.9); }
+        input, textarea, select { padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; width: 100%; max-width: 400px; font-family: inherit; }
+        .admin-panel { background: #fef9e6; padding: 20px; border-radius: 16px; margin-top: 20px; }
+        .hidden { display: none; }
+        .modal { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; width: 90%; max-width: 500px; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        footer { background: #002b4d; color: #ccc; text-align: center; padding: 25px 0; margin-top: 40px; font-size: 0.85rem; }
+        @media (max-width: 768px) { .nav-links a { padding: 10px 12px; font-size: 0.8rem; } main { padding: 20px; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-inner">
+        <img class="logo-img" src="https://cbr.ru/Static/Img/Logo/logo_blue.svg" alt="Логотип Банка России" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Bank_of_Russia_logo.svg/200px-Bank_of_Russia_logo.svg.png'">
+        <div class="logo-text">
+            <h1>Центральный банк Российской Федерации</h1>
+            <p>Официальный сайт</p>
+        </div>
+    </div>
+</header>
+
+<nav>
+    <div class="container nav-links">
+        <a onclick="showPage('home')">Главная</a>
+        <a onclick="showPage('about')">О банке</a>
+        <a onclick="showPage('monetary')">Денежно-кредитная политика</a>
+        <a onclick="showPage('press')">Пресс-служба</a>
+        <a onclick="showPage('contacts')">Контакты</a>
+        <a onclick="showPage('adminLogin')" style="background:#004b7c; border-radius:8px;">🔧 Админ-панель</a>
+    </div>
+</nav>
+
+<main id="pageContent" class="container"></main>
+
+<footer>
+    <div class="container">
+        <p>© 1997–2025 Центральный банк Российской Федерации</p>
+        <p style="margin-top:8px;">При использовании материалов гиперссылка на сайт Банка России обязательна.</p>
+    </div>
+</footer>
+
+<script>
+    // --------------------- ИНИЦИАЛИЗАЦИЯ ДАННЫХ ---------------------
+    function initData() {
+        // Валюты
+        if (!localStorage.getItem('cb_rates')) {
+            localStorage.setItem('cb_rates', JSON.stringify([
+                { code: "USD", name: "Доллар США", rate: 92.50 },
+                { code: "EUR", name: "Евро", rate: 100.20 },
+                { code: "CNY", name: "Китайский юань", rate: 12.80 }
+            ]));
+        }
+        // Новости
+        if (!localStorage.getItem('cb_news')) {
+            localStorage.setItem('cb_news', JSON.stringify([
+                { id: 1, title: "Ключевая ставка сохранена на уровне 16%", date: "2025-03-15", content: "Совет директоров Банка России принял решение сохранить ключевую ставку на уровне 16% годовых." },
+                { id: 2, title: "Изменение порядка предоставления отчетности", date: "2025-03-10", content: "С 1 апреля 2025 года вступают в силу новые требования к отчетности кредитных организаций." }
+            ]));
+        }
+        // Сотрудники
+        if (!localStorage.getItem('cb_employees')) {
+            localStorage.setItem('cb_employees', JSON.stringify([
+                { id: 1, fullname: "Набиуллина Эльвира Сахипзадовна", phone: "+7 (495) 771-47-47", position: "Председатель Банка России" },
+                { id: 2, fullname: "Скворцов Олег Вячеславович", phone: "+7 (495) 771-23-45", position: "Первый заместитель Председателя" }
+            ]));
+        }
+        // Пароль админа
+        if (!localStorage.getItem('cb_admin_pass')) localStorage.setItem('cb_admin_pass', 'admin');
+    }
+
+    // Получение данных
+    function getRates() { return JSON.parse(localStorage.getItem('cb_rates')); }
+    function saveRates(r) { localStorage.setItem('cb_rates', JSON.stringify(r)); }
+    function getNews() { return JSON.parse(localStorage.getItem('cb_news')); }
+    function saveNews(n) { localStorage.setItem('cb_news', JSON.stringify(n)); }
+    function getEmployees() { return JSON.parse(localStorage.getItem('cb_employees')); }
+    function saveEmployees(e) { localStorage.setItem('cb_employees', JSON.stringify(e)); }
+    function checkAdminPass(pwd) { return pwd === localStorage.getItem('cb_admin_pass'); }
+    function setAdminPass(pwd) { localStorage.setItem('cb_admin_pass', pwd); }
+
+    let adminAuthenticated = false;
+
+    // Глобальная функция отображения страниц
+    window.showPage = function(page, params = {}) {
+        const contentDiv = document.getElementById('pageContent');
+        if (page === 'home') renderHome(contentDiv);
+        else if (page === 'about') renderAbout(contentDiv);
+        else if (page === 'monetary') renderMonetary(contentDiv);
+        else if (page === 'press') renderPress(contentDiv);
+        else if (page === 'contacts') renderContacts(contentDiv);
+        else if (page === 'adminLogin') renderAdminLogin(contentDiv);
+        else if (page === 'adminPanel') {
+            if (adminAuthenticated) renderAdminPanel(contentDiv);
+            else renderAdminLogin(contentDiv);
+        }
+        window.scrollTo(0,0);
+    };
+
+    // --------------------- ПУБЛИЧНЫЕ СТРАНИЦЫ ---------------------
+    function renderHome(container) {
+        const rates = getRates();
+        const news = getNews();
+        let html = `
+            <div class="rates-card">
+                <h2>Официальные курсы валют на сегодня</h2>
+                <div class="rates-grid">
+                    ${rates.map(r => `<div class="rate-item">${r.code} (${r.name}): ${r.rate} ₽</div>`).join('')}
+                </div>
+                <p style="margin-top:12px; font-size:0.8rem;">* Курсы обновляются ежедневно в 11:30 МСК</p>
+            </div>
+            <div>
+                <h2>Новости и пресс-релизы</h2>
+                <div class="news-list">
+                    ${news.length ? news.map(n => `
+                        <article>
+                            <h3>${escapeHtml(n.title)}</h3>
+                            <div class="news-date">${n.date}</div>
+                            <p>${escapeHtml(n.content)}</p>
+                        </article>
+                    `).join('') : '<p>Нет новостей</p>'}
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    function renderAbout(container) {
+        container.innerHTML = `
+            <h2>О Банке России</h2>
+            <p>Банк России — главный банк страны, осуществляет регулирование денежно-кредитной сферы, защиту и обеспечение устойчивости рубля, развитие и укрепление банковской системы.</p>
+            <p>Основные функции: эмиссия наличных денег, управление золотовалютными резервами, банковский надзор, регулирование финансовых рынков.</p>
+            <p><strong>Председатель Банка России:</strong> ${getEmployees().find(e => e.position.includes('Председатель'))?.fullname || 'Э.С. Набиуллина'}</p>
+            <p>Официальный сайт: <a href="https://cbr.ru" target="_blank">cbr.ru</a></p>
+        `;
+    }
+
+    function renderMonetary(container) {
+        container.innerHTML = `
+            <h2>Денежно-кредитная политика</h2>
+            <p>Банк России проводит денежно-кредитную политику с целью снижения инфляции до целевого уровня 4%. Основной инструмент — ключевая ставка.</p>
+            <p>Текущая ключевая ставка: <strong>16,00%</strong> (с 15 марта 2025 года).</p>
+            <p>Ближайшие заседания Совета директоров: 25 апреля 2025 г., 6 июня 2025 г.</p>
+            <p>Больше информации на странице <a href="https://cbr.ru/dkp/" target="_blank">ДКП</a>.</p>
+        `;
+    }
+
+    function renderPress(container) {
+        const news = getNews();
+        container.innerHTML = `
+            <h2>Пресс-служба</h2>
+            <p>Актуальные новости и официальные сообщения Банка России.</p>
+            <div class="news-list">
+                ${news.length ? news.map(n => `
+                    <article>
+                        <h3>${escapeHtml(n.title)}</h3>
+                        <div class="news-date">${n.date}</div>
+                        <p>${escapeHtml(n.content)}</p>
+                    </article>
+                `).join('') : '<p>Нет новостей</p>'}
+            </div>
+            <p style="margin-top:20px;">Пресс-служба: тел. +7 (495) 771-47-47, email: press@cbr.ru</p>
+        `;
+    }
+
+    function renderContacts(container) {
+        const employees = getEmployees();
+        container.innerHTML = `
+            <h2>Контакты и руководство</h2>
+            <p>Центральный банк РФ<br>📍 Адрес: 107016, Москва, ул. Неглинная, 12<br>📞 Справочная служба: +7 (495) 771-47-47</p>
+            <h3>Руководство и сотрудники</h3>
+            <table class="employees-table">
+                <thead><tr><th>ФИО</th><th>Должность</th><th>Телефон</th></tr></thead>
+                <tbody>
+                    ${employees.map(emp => `
+                        <tr><td>${escapeHtml(emp.fullname)}</td><td>${escapeHtml(emp.position)}</td><td>${escapeHtml(emp.phone)}</td></tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    // --------------------- АДМИН-ПАНЕЛЬ ---------------------
+    function renderAdminLogin(container) {
+        container.innerHTML = `
+            <div class="admin-panel" style="max-width:400px; margin:auto;">
+                <h2>Вход в панель управления</h2>
+                <input type="password" id="adminPassInput" placeholder="Пароль" />
+                <button onclick="doAdminLogin()">Войти</button>
+            </div>
+        `;
+    }
+
+    window.doAdminLogin = function() {
+        const pwd = document.getElementById('adminPassInput').value;
+        if (checkAdminPass(pwd)) {
+            adminAuthenticated = true;
+            showPage('adminPanel');
+        } else {
+            alert('Неверный пароль!');
+        }
+    };
+
+    function renderAdminPanel(container) {
+        const rates = getRates();
+        const news = getNews();
+        const employees = getEmployees();
+
+        let html = `
+            <div class="admin-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🔧 Административная панель ЦБ РФ</h2>
+                    <button class="danger" onclick="logoutAdmin()">Выйти</button>
+                </div>
+
+                <!-- Управление валютами -->
+                <h3>💱 Курсы валют</h3>
+                <div>
+                    <input type="text" id="newCurrCode" placeholder="Код (USD)" style="width:100px">
+                    <input type="text" id="newCurrName" placeholder="Название">
+                    <input type="number" id="newCurrRate" step="0.01" placeholder="Курс">
+                    <button onclick="addCurrency()">Добавить валюту</button>
+                </div>
+                ${rates.map((r, idx) => `
+                    <div style="margin:8px 0;">
+                        <strong>${r.code}</strong> (${r.name}) — 
+                        <input type="number" id="rate_${idx}" value="${r.rate}" step="0.01" style="width:100px">
+                        <button onclick="updateCurrency(${idx})">Обновить</button>
+                        <button class="danger" onclick="deleteCurrency(${idx})">Удалить</button>
+                    </div>
+                `).join('')}
+                <hr>
+
+                <!-- Управление новостями -->
+                <h3>📰 Новости</h3>
+                <div>
+                    <input type="text" id="newsTitle" placeholder="Заголовок">
+                    <input type="date" id="newsDate">
+                    <textarea id="newsContent" rows="2" placeholder="Текст новости"></textarea>
+                    <button onclick="addNews()">Добавить новость</button>
+                </div>
+                ${news.map(n => `
+                    <div style="border:1px solid #ddd; margin:10px 0; padding:10px; border-radius:8px;">
+                        <b>${escapeHtml(n.title)}</b> (${n.date})
+                        <p>${escapeHtml(n.content)}</p>
+                        <button onclick="editNews(${n.id})">Редактировать</button>
+                        <button class="danger" onclick="deleteNews(${n.id})">Удалить</button>
+                    </div>
+                `).join('')}
+                <hr>
+
+                <!-- Управление сотрудниками -->
+                <h3>👥 Сотрудники</h3>
+                <div>
+                    <input type="text" id="empFullname" placeholder="ФИО">
+                    <input type="text" id="empPhone" placeholder="Телефон">
+                    <input type="text" id="empPosition" placeholder="Должность">
+                    <button onclick="addEmployee()">Добавить сотрудника</button>
+                </div>
+                <table class="employees-table">
+                    <thead><tr><th>ФИО</th><th>Телефон</th><th>Должность</th><th>Действия</th></tr></thead>
+                    <tbody>
+                        ${employees.map(emp => `
+                            <tr>
+                                <td>${escapeHtml(emp.fullname)}</td>
+                                <td>${escapeHtml(emp.phone)}</td>
+                                <td>${escapeHtml(emp.position)}</td>
+                                <td>
+                                    <button onclick="editEmployee(${emp.id})">Ред.</button>
+                                    <button class="danger" onclick="deleteEmployee(${emp.id})">Уд.</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <hr>
+
+                <h3>⚙️ Сменить пароль администратора</h3>
+                <input type="password" id="newAdminPass" placeholder="Новый пароль">
+                <button onclick="changeAdminPassword()">Сменить пароль</button>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    // Функции управления (глобальные для вызова из кнопок)
+    window.addCurrency = function() {
+        const code = document.getElementById('newCurrCode').value.trim().toUpperCase();
+        const name = document.getElementById('newCurrName').value.trim();
+        const rate = parseFloat(document.getElementById('newCurrRate').value);
+        if (!code || !name || isNaN(rate)) { alert('Заполните все поля'); return; }
+        const rates = getRates();
+        if (rates.find(r => r.code === code)) { alert('Валюта уже есть'); return; }
+        rates.push({ code, name, rate });
+        saveRates(rates);
+        showPage('adminPanel');
+        showPage('home'); if (document.getElementById('pageContent').innerHTML.includes('Главная')) showPage('home'); // обновить главную
+    };
+    window.updateCurrency = function(idx) {
+        const newRate = parseFloat(document.getElementById(`rate_${idx}`).value);
+        if (isNaN(newRate)) return;
+        const rates = getRates();
+        rates[idx].rate = newRate;
+        saveRates(rates);
+        showPage('adminPanel');
+        showPage('home');
+    };
+    window.deleteCurrency = function(idx) {
+        if (confirm('Удалить валюту?')) {
+            const rates = getRates();
+            rates.splice(idx,1);
+            saveRates(rates);
+            showPage('adminPanel');
+            showPage('home');
+        }
+    };
+    window.addNews = function() {
+        const title = document.getElementById('newsTitle').value.trim();
+        const date = document.getElementById('newsDate').value;
+        const content = document.getElementById('newsContent').value.trim();
+        if (!title || !date || !content) { alert('Заполните все поля'); return; }
+        const news = getNews();
+        const newId = news.length ? Math.max(...news.map(n=>n.id))+1 : 1;
+        news.push({id:newId, title, date, content});
+        saveNews(news);
+        showPage('adminPanel');
+        showPage('home');
+    };
+    window.editNews = function(id) {
+        const news = getNews();
+        const item = news.find(n => n.id === id);
+        if (!item) return;
+        const newTitle = prompt('Заголовок:', item.title);
+        if (newTitle === null) return;
+        const newDate = prompt('Дата (ГГГГ-ММ-ДД):', item.date);
+        if (newDate === null) return;
+        const newContent = prompt('Текст:', item.content);
+        if (newContent === null) return;
+        item.title = newTitle; item.date = newDate; item.content = newContent;
+        saveNews(news);
+        showPage('adminPanel');
+        showPage('home');
+    };
+    window.deleteNews = function(id) {
+        if (confirm('Удалить новость?')) {
+            let news = getNews();
+            news = news.filter(n => n.id !== id);
+            saveNews(news);
+            showPage('adminPanel');
+            showPage('home');
+        }
+    };
+    window.addEmployee = function() {
+        const fullname = document.getElementById('empFullname').value.trim();
+        const phone = document.getElementById('empPhone').value.trim();
+        const position = document.getElementById('empPosition').value.trim();
+        if (!fullname || !phone || !position) { alert('Заполните все поля'); return; }
+        const employees = getEmployees();
+        const newId = employees.length ? Math.max(...employees.map(e=>e.id))+1 : 1;
+        employees.push({id:newId, fullname, phone, position});
+        saveEmployees(employees);
+        showPage('adminPanel');
+        showPage('contacts');
+    };
+    window.editEmployee = function(id) {
+        const employees = getEmployees();
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
+        const newName = prompt('ФИО:', emp.fullname);
+        if (newName === null) return;
+        const newPhone = prompt('Телефон:', emp.phone);
+        if (newPhone === null) return;
+        const newPos = prompt('Должность:', emp.position);
+        if (newPos === null) return;
+        emp.fullname = newName; emp.phone = newPhone; emp.position = newPos;
+        saveEmployees(employees);
+        showPage('adminPanel');
+        showPage('contacts');
+    };
+    window.deleteEmployee = function(id) {
+        if (confirm('Удалить сотрудника?')) {
+            let emps = getEmployees();
+            emps = emps.filter(e => e.id !== id);
+            saveEmployees(emps);
+            showPage('adminPanel');
+            showPage('contacts');
+        }
+    };
+    window.changeAdminPassword = function() {
+        const newPwd = document.getElementById('newAdminPass').value;
+        if (!newPwd) { alert('Введите новый пароль'); return; }
+        setAdminPass(newPwd);
+        alert('Пароль изменён! Запомните: ' + newPwd);
+        document.getElementById('newAdminPass').value = '';
+    };
+    window.logoutAdmin = function() {
+        adminAuthenticated = false;
+        showPage('home');
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Запуск
+    initData();
+    showPage('home');
+</script>
+</body>
+</html>
